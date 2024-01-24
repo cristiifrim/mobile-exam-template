@@ -44,7 +44,7 @@ class _ReportsPageState extends State<ReportsPage> {
   }
 
   void _connectionChanged(dynamic hasNetwork) {
-    if (widget.mealBusinessLogic.hasNetwork && !hasNetwork) {
+    if (!hasNetwork) {
       openSnackbar(
           "This page is unavailable due to absence of internet connection", 1);
       Navigator.pop(context);
