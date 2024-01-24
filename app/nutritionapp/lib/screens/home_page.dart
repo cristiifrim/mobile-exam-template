@@ -24,6 +24,8 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  ConnectionStatusManager connectionStatus =
+      ConnectionStatusManager.getInstance();
   StreamSubscription? _connectionChangeStream;
   WebSocketManager? _webSocketManager;
 
@@ -33,8 +35,6 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
 
-    ConnectionStatusManager connectionStatus =
-        ConnectionStatusManager.getInstance();
     _connectionChangeStream =
         connectionStatus.connectionChange.listen(_connectionChanged);
     connectionStatus.hasNetwork();
@@ -69,15 +69,15 @@ class _HomePageState extends State<HomePage> {
         openSnackbar('Notification: $message', 2);
       });
       widget.mealBusinessLogic.hasNetwork = true;
-      fetchData();
     } else if (!hasNetwork) {
       openSnackbar(
-          "There is no connection to internet! Loaded from local database.", 5);
+          "There is no connection to internet! Loaded from local database.", 2);
       _webSocketManager?.disconnect();
       _webSocketManager = null;
       widget.mealBusinessLogic.hasNetwork = false;
-      widget.mealBusinessLogic.saveMeals().then((_) => setState(() {}));
+      widget.mealBusinessLogic.saveMeals();
     }
+    fetchData();
   }
 
   void addMeal(String name, String type, double calories, DateTime date,
@@ -107,8 +107,15 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: _loading
-          ? const CircularProgressIndicator()
+      body: _loading || widget.mealBusinessLogic.meals.isEmpty
+          ? Center(
+              child: Column(children: [
+              const CircularProgressIndicator(),
+              const Text("Waiting for internet connection"),
+              ElevatedButton(
+                  onPressed: () => connectionStatus.hasNetwork(),
+                  child: const Text("Retry connection"))
+            ]))
           : MealListWidget(meals: widget.mealBusinessLogic.meals),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
