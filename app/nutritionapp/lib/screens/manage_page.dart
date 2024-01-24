@@ -42,7 +42,7 @@ class _ManagePageState extends State<ManagePage> {
   }
 
   void _connectionChanged(dynamic hasNetwork) {
-    if (!hasNetwork) {
+    if (mounted && !hasNetwork) {
       openSnackbar(
           "This page is unavailable due to absence of internet connection", 1);
       Navigator.pop(context);

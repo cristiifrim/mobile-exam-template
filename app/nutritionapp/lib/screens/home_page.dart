@@ -27,6 +27,8 @@ class _HomePageState extends State<HomePage> {
   StreamSubscription? _connectionChangeStream;
   WebSocketManager? _webSocketManager;
 
+  bool _loading = true;
+
   @override
   void initState() {
     super.initState();
@@ -56,7 +58,6 @@ class _HomePageState extends State<HomePage> {
   }
 
   void _connectionChanged(dynamic hasNetwork) {
-    print("Network: $hasNetwork");
     if (!widget.mealBusinessLogic.hasNetwork && hasNetwork) {
       openSnackbar(
           "You are connected to internet. Your application has been updated with the server.",
@@ -66,11 +67,9 @@ class _HomePageState extends State<HomePage> {
         var message =
             "A new meal was added. Name: ${meal.name}, type: ${meal.type}, calories: ${meal.calories}";
         openSnackbar('Notification: $message', 2);
-        setState(() {});
       });
       widget.mealBusinessLogic.hasNetwork = true;
-      widget.mealBusinessLogic.syncLocalDbWithServer().then((_) =>
-          widget.mealBusinessLogic.getAllMeals().then((_) => setState(() {})));
+      fetchData();
     } else if (!hasNetwork) {
       openSnackbar(
           "There is no connection to internet! Loaded from local database.", 5);
@@ -108,7 +107,9 @@ class _HomePageState extends State<HomePage> {
           ),
         ],
       ),
-      body: MealListWidget(meals: widget.mealBusinessLogic.meals),
+      body: _loading
+          ? const CircularProgressIndicator()
+          : MealListWidget(meals: widget.mealBusinessLogic.meals),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
@@ -144,7 +145,7 @@ class _HomePageState extends State<HomePage> {
                     "You cannot access this section while offline.", 1);
               } else {
                 Future pushNamed = Navigator.pushNamed(context, '/manage');
-                pushNamed.then((_)=> setState(() {}));
+                pushNamed.then((_) => setState(() {}));
               }
               break;
             case 2:
@@ -159,5 +160,13 @@ class _HomePageState extends State<HomePage> {
         },
       ),
     );
+  }
+
+  fetchData() async {
+    await widget.mealBusinessLogic.syncLocalDbWithServer();
+    await widget.mealBusinessLogic.getAllMeals();
+    setState(() {
+      _loading = false;
+    });
   }
 }
